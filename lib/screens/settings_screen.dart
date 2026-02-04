@@ -10,7 +10,8 @@ class SettingsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Settings'),
+        centerTitle: false,
+        title: const Text('Settings',style: TextStyle(fontWeight: FontWeight.bold),),
         leading: IconButton(onPressed: (){
           Navigator.of(context).pop();
         }, icon: Icon(Icons.arrow_back_ios)),
@@ -40,7 +41,7 @@ class SettingsScreen extends StatelessWidget {
                 ),
                 onTap: () => provider.openNotificationSettings(),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
 
               // Data Management Section
               _buildSectionHeader('Data Management'),
@@ -58,9 +59,16 @@ class SettingsScreen extends StatelessWidget {
                 iconColor: AppColors.error,
                 onTap: () => _showClearAllDialog(context, provider),
               ),
-              const SizedBox(height: 24),
-
+              const SizedBox(height: 20),
               // About Section
+              _buildSectionHeader('Data Privacy'),
+              _buildSettingCard(
+                icon: Icons.shield_outlined,
+                title: 'Privacy and Security',
+                subtitle: 'How we protect your data',
+                onTap: () => _showPrivacyDialog(context),
+              ),
+              const SizedBox(height: 20),
               _buildSectionHeader('About'),
               _buildSettingCard(
                 icon: Icons.info_outline,
@@ -68,6 +76,7 @@ class SettingsScreen extends StatelessWidget {
                 subtitle: 'Version 1.0.0',
                 onTap: () => _showAboutDialog(context),
               ),
+
               const SizedBox(height: 20),
             ],
           );
@@ -145,9 +154,10 @@ class SettingsScreen extends StatelessWidget {
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Delete Old Notifications'),
+        title: const Text('Delete Old Notifications',style: TextStyle(fontWeight: FontWeight.w600,fontSize: 22)),
         content: const Text(
           'This will delete all notifications older than 30 days. This action cannot be undone.',
+            style: TextStyle(fontWeight: FontWeight.w500,color: AppColors.textSecondary)
         ),
         actions: [
           TextButton(
@@ -180,9 +190,10 @@ class SettingsScreen extends StatelessWidget {
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Clear All Notifications'),
+        title: const Text('Clear All Notifications',style: TextStyle(fontWeight: FontWeight.w600,fontSize: 22)),
         content: const Text(
           'This will permanently delete all saved notifications. This action cannot be undone.',
+            style: TextStyle(fontWeight: FontWeight.w500,color: AppColors.textSecondary)
         ),
         actions: [
           TextButton(
@@ -206,6 +217,25 @@ class SettingsScreen extends StatelessWidget {
               );
             },
             child: const Text('Delete All'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showPrivacyDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Privacy and Security',style: TextStyle(fontWeight: FontWeight.w600),),
+        content: const Text(
+          'Your privacy is our top priority. NotifyGuard operates entirely on your device.\n\nAll your notifications are stored locally and are never sent to any server. This means only you have access to your information.',
+            style: TextStyle(fontWeight: FontWeight.w500,color: AppColors.textSecondary),),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
           ),
         ],
       ),
@@ -240,6 +270,7 @@ class SettingsScreen extends StatelessWidget {
               'Version 1.0.0',
               style: TextStyle(
                 color: AppColors.textSecondary,
+                fontWeight: FontWeight.w500
               ),
             ),
             const SizedBox(height: 16),
@@ -249,6 +280,7 @@ class SettingsScreen extends StatelessWidget {
               style: TextStyle(
                 color: AppColors.textSecondary,
                 height: 1.5,
+                fontWeight: FontWeight.w500
               ),
             ),
             const SizedBox(height: 16),

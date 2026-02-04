@@ -248,26 +248,28 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   Widget _buildCategoryFilter(NotificationProvider provider) {
-    return PopupMenuButton<String>(
-      surfaceTintColor: Colors.transparent,
-      shadowColor: Colors.transparent,
-      onSelected: (String value) {
-        setState(() {
-          _selectedCategory = value;
-        });
-      },
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      offset: const Offset(0, 48),
-      itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-        _buildFilterItem('all', 'All', provider),
-        _buildFilterItem('emergency', 'Emergency', provider),
-        _buildFilterItem('otp', 'OTP', provider),
-        _buildFilterItem('bank', 'Banking', provider),
-        _buildFilterItem('security', 'Security', provider),
-      ],
-      child: const Padding(
-        padding: EdgeInsets.only(right: 15,left: 5),
-        child: Icon(Icons.filter_list),
+    return Padding(
+      padding: EdgeInsets.only(right: 10),
+      child: PopupMenuButton<String>(
+        borderRadius: BorderRadius.circular(30),
+        onSelected: (String value) {
+          setState(() {
+            _selectedCategory = value;
+          });
+        },
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        offset: const Offset(0, 48),
+        itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+          _buildFilterItem('all', 'All', provider),
+          _buildFilterItem('emergency', 'Emergency', provider),
+          _buildFilterItem('otp', 'OTP', provider),
+          _buildFilterItem('bank', 'Banking', provider),
+          _buildFilterItem('security', 'Security', provider),
+        ],
+        child: Padding(
+          padding: const EdgeInsets.all(5.0),
+          child: Icon(Icons.filter_list),
+        ),
       ),
     );
   }

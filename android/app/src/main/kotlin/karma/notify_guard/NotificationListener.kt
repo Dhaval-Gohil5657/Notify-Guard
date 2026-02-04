@@ -34,7 +34,7 @@ class NotificationListener : NotificationListenerService() {
         private val BANK_KEYWORDS = listOf(
             "bank","banking", "credit", "debit", "transaction", "payment", "upi",
             "credited", "debited", "account", "balance", "transfer",
-            "withdrawn","withdraw", "deposit", "atm", "neft", "imps", "rtgs", "inr", "rs"
+            "withdrawn","withdraw", "deposit", "atm"
         )
 
         private val EMERGENCY_KEYWORDS = listOf(
@@ -43,14 +43,12 @@ class NotificationListener : NotificationListenerService() {
 
         private val SECURITY_KEYWORDS = listOf(
             "security", "warning", "suspicious", "unauthorized",
-            "login attempt", "new device", "password changed", "breach",
-            "compromised", "urgent", "important", "critical"
+            "login attempt", "new device", "password changed", "breach"
         )
 
         private val BLOCKED_PACKAGES = listOf(
             "com.android.systemui",
             "android",
-            "karma.notify_guard"
         )
     }
 
