@@ -20,6 +20,10 @@ class NotificationListener : NotificationListenerService() {
         // Callback for sending notifications to Flutter
         var notificationCallback: ((Map<String, String>) -> Unit)? = null
 
+        // Track recently sent notification keys to prevent duplicates
+        private val recentlySentKeys = LinkedHashMap<String, Long>(50, 0.75f, true)
+        private const val DEDUP_WINDOW_MS = 5000L
+
         // Keywords for detecting critical notifications
         private val OTP_KEYWORDS = listOf(
             "otp", "verification code", "verify", "one-time", "one time",
@@ -33,10 +37,14 @@ class NotificationListener : NotificationListenerService() {
             "withdrawn", "deposit", "atm", "neft", "imps", "rtgs", "inr", "rs"
         )
 
+        private val EMERGENCY_KEYWORDS = listOf(
+            "emergency", "help", "health", "sos", "accident", "blood"
+        )
+
         private val SECURITY_KEYWORDS = listOf(
-            "security", "alert", "warning", "suspicious", "unauthorized",
+            "security", "warning", "suspicious", "unauthorized",
             "login attempt", "new device", "password changed", "breach",
-            "compromised", "urgent", "important", "critical", "emergency"
+            "compromised", "urgent", "important", "critical"
         )
 
         private val BLOCKED_PACKAGES = listOf(
@@ -123,6 +131,19 @@ class NotificationListener : NotificationListenerService() {
                 if (debugMode || category != "general") {
                     val finalCategory = if (category == "general" && debugMode) "debug" else category
 
+                    // Dedup check: skip if same key was sent recently
+                    val dedupeKey = "${notification.key}:${notification.postTime}"
+                    val now = System.currentTimeMillis()
+                    val lastSent = recentlySentKeys[dedupeKey]
+                    if (lastSent != null && (now - lastSent) < DEDUP_WINDOW_MS) {
+                        Log.d(TAG, "⏭️ Skipping duplicate notification: $dedupeKey")
+                        return
+                    }
+                    recentlySentKeys[dedupeKey] = now
+
+                    // Cleanup old entries
+                    recentlySentKeys.entries.removeAll { (now - it.value) > DEDUP_WINDOW_MS }
+
                     val notificationData = mapOf(
                         "id" to notification.id.toString(),
                         "packageName" to notification.packageName,
@@ -156,6 +177,7 @@ class NotificationListener : NotificationListenerService() {
 
     private fun categorizeNotification(content: String): String {
         return when {
+            EMERGENCY_KEYWORDS.any { content.contains(it) } -> "emergency"
             OTP_KEYWORDS.any { content.contains(it) } -> "otp"
             BANK_KEYWORDS.any { content.contains(it) } -> "bank"
             SECURITY_KEYWORDS.any { content.contains(it) } -> "security"

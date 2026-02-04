@@ -24,6 +24,7 @@ class AppColors {
   static const Color otpCategory = Color(0xFF7C3AED);      // Purple for OTP
   static const Color bankCategory = Color(0xFF2563EB);     // Blue for Banking
   static const Color securityCategory = Color(0xFFDC2626); // Red for Security
+  static const Color emergencyCategory = Color(0xFFD32F2F); // Darker Red for Emergency
 
   // Status Colors
   static const Color success = Color(0xFF10B981);

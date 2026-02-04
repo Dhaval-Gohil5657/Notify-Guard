@@ -21,6 +21,8 @@ class NotificationDetailScreen extends StatelessWidget {
         return AppColors.bankCategory;
       case 'security':
         return AppColors.securityCategory;
+      case 'emergency':
+        return AppColors.emergencyCategory;
       default:
         return AppColors.primary;
     }
@@ -34,6 +36,8 @@ class NotificationDetailScreen extends StatelessWidget {
         return Icons.account_balance_outlined;
       case 'security':
         return Icons.security_outlined;
+      case 'emergency':
+        return Icons.emergency_outlined;
       default:
         return Icons.notifications_outlined;
     }
@@ -41,14 +45,12 @@ class NotificationDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: AppColors.background,
-        toolbarHeight: 10,
-        leading: const Text(''),
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.background,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(25))
       ),
-      body: SafeArea(
+      child: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(20),
           child: Column(

@@ -13,6 +13,7 @@ class NotificationService {
   StreamSubscription? _subscription;
   final _notificationController =
       StreamController<SavedNotification>.broadcast();
+  final Set<String> _processingKeys = {};
 
   Stream<SavedNotification> get notificationStream =>
       _notificationController.stream;
@@ -50,9 +51,22 @@ class NotificationService {
   }
 
   void startListening() {
+    // Cancel any existing subscription to prevent duplicates
+    _subscription?.cancel();
+    _subscription = null;
+    _processingKeys.clear();
+
     _subscription = _eventChannel.receiveBroadcastStream().listen(
       (dynamic event) async {
         if (event is Map) {
+          final notificationKey = event['key'] ?? '';
+          final timestamp = event['timestamp'] ?? '';
+          final dedupeKey = '$notificationKey:$timestamp';
+
+          // Synchronous dedup check before any await - prevents race condition
+          if (_processingKeys.contains(dedupeKey)) return;
+          _processingKeys.add(dedupeKey);
+
           final packageName = event['packageName'] ?? '';
           final appName = await getAppName(packageName);
           final notification = SavedNotification.fromMap(event, appName);
@@ -74,6 +88,7 @@ class NotificationService {
   void stopListening() {
     _subscription?.cancel();
     _subscription = null;
+    _processingKeys.clear();
   }
 
   void dispose() {

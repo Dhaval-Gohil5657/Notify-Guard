@@ -50,10 +50,13 @@ class DatabaseService {
   }
 
   Future<bool> isDuplicate(SavedNotification notification) async {
-    // Check if a notification with same key exists within last 5 seconds
+    // Check if a notification with same content exists within last 5 seconds
     final recentNotifications = _box.values.where((n) {
       final timeDiff = notification.timestamp.difference(n.timestamp).inSeconds;
-      return n.key == notification.key && timeDiff.abs() < 5;
+      return n.packageName == notification.packageName &&
+          n.title == notification.title &&
+          n.text == notification.text &&
+          timeDiff.abs() < 5;
     });
     return recentNotifications.isNotEmpty;
   }

@@ -45,19 +45,21 @@ class NotificationCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Dismissible(
       key: Key(notification.key),
-      direction: DismissDirection.endToStart,
+      direction: DismissDirection.startToEnd,
       onDismissed: (_) => onMarkAsRead(),
       background: Container(
-        alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: 20),
+        alignment: Alignment.centerLeft,
+        padding: const EdgeInsets.only(left: 20),
         margin: const EdgeInsets.symmetric(vertical: 6),
         decoration: BoxDecoration(
           color: AppColors.success,
           borderRadius: BorderRadius.circular(12),
         ),
         child: const Row(
-          mainAxisAlignment: MainAxisAlignment.end,
+          mainAxisAlignment: MainAxisAlignment.start,
           children: [
+            Icon(Icons.check_circle_outline, color: Colors.white),
+            SizedBox(width: 8),
             Text(
               'Mark as Read',
               style: TextStyle(
@@ -65,8 +67,6 @@ class NotificationCard extends StatelessWidget {
                 fontWeight: FontWeight.w600,
               ),
             ),
-            SizedBox(width: 8),
-            Icon(Icons.check_circle_outline, color: Colors.white),
           ],
         ),
       ),

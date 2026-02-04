@@ -11,6 +11,9 @@ class SettingsScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Settings'),
+        leading: IconButton(onPressed: (){
+          Navigator.of(context).pop();
+        }, icon: Icon(Icons.arrow_back_ios)),
       ),
       body: Consumer<NotificationProvider>(
         builder: (context, provider, _) {
@@ -65,11 +68,7 @@ class SettingsScreen extends StatelessWidget {
                 subtitle: 'Version 1.0.0',
                 onTap: () => _showAboutDialog(context),
               ),
-              const SizedBox(height: 24),
-
-              // Stats
-              _buildSectionHeader('Statistics'),
-              _buildStatsCard(provider),
+              const SizedBox(height: 20),
             ],
           );
         },
@@ -137,83 +136,6 @@ class SettingsScreen extends StatelessWidget {
             ),
         onTap: onTap,
       ),
-    );
-  }
-
-  Widget _buildStatsCard(NotificationProvider provider) {
-    final total = provider.notifications.length;
-    final otpCount = provider.getCountByCategory('otp');
-    final bankCount = provider.getCountByCategory('bank');
-    final securityCount = provider.getCountByCategory('security');
-
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: _buildStatItem(
-                    'Total',
-                    total.toString(),
-                    AppColors.primary,
-                  ),
-                ),
-                Expanded(
-                  child: _buildStatItem(
-                    'OTP',
-                    otpCount.toString(),
-                    AppColors.otpCategory,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildStatItem(
-                    'Banking',
-                    bankCount.toString(),
-                    AppColors.bankCategory,
-                  ),
-                ),
-                Expanded(
-                  child: _buildStatItem(
-                    'Security',
-                    securityCount.toString(),
-                    AppColors.securityCategory,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStatItem(String label, String value, Color color) {
-    return Column(
-      children: [
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 28,
-            fontWeight: FontWeight.bold,
-            color: color,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 13,
-            color: AppColors.textSecondary,
-          ),
-        ),
-      ],
     );
   }
 

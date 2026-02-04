@@ -40,11 +40,27 @@ class NotificationProvider extends ChangeNotifier {
   }
 
   void _startListening() {
+    // Cancel existing subscriptions to prevent duplicate listeners
+    _notificationSubscription?.cancel();
+    _notificationSubscription = null;
+    _notificationService.stopListening();
+
     _notificationService.startListening();
     _notificationSubscription = _notificationService.notificationStream.listen(
       (notification) {
-        _notifications.insert(0, notification);
-        notifyListeners();
+        // Prevent duplicates in the in-memory list using content-based check
+        final isDuplicate = _notifications.any(
+          (n) =>
+              n.packageName == notification.packageName &&
+              n.title == notification.title &&
+              n.text == notification.text &&
+              (notification.timestamp.difference(n.timestamp).inSeconds).abs() <
+                  5,
+        );
+        if (!isDuplicate) {
+          _notifications.insert(0, notification);
+          notifyListeners();
+        }
       },
     );
   }
@@ -89,9 +105,9 @@ class NotificationProvider extends ChangeNotifier {
   }
 
   Future<void> deleteNotification(SavedNotification notification) async {
-    await _databaseService.deleteNotification(notification);
     _notifications.remove(notification);
     notifyListeners();
+    await _databaseService.deleteNotification(notification);
   }
 
   Future<void> deleteAllNotifications() async {

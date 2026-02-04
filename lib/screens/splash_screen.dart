@@ -129,7 +129,7 @@ class _SplashScreenState extends State<SplashScreen>
                 child: const Column(
                   children: [
                     Text(
-                      'NotifyGuard',
+                      'Notify Guard',
                       style: TextStyle(
                         fontSize: 32,
                         fontWeight: FontWeight.bold,

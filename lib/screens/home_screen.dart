@@ -94,7 +94,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             ),
             const SizedBox(width: 12),
             const Text(
-              'NotifyGuard',
+              'Notify Guard',
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
           ],
@@ -109,6 +109,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               );
             },
           ),
+          _buildCategoryFilter(context.watch<NotificationProvider>()),
         ],
       ),
       body: Consumer<NotificationProvider>(
@@ -123,7 +124,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             children: [
               if (!provider.hasNotificationAccess)
               _buildStatusBanner(provider),
-              _buildCategoryFilter(provider),
               Expanded(child: _buildNotificationList(provider)),
             ],
           );
@@ -167,58 +167,89 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   Widget _buildCategoryFilter(NotificationProvider provider) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
+    return PopupMenuButton<String>(
+      onSelected: (String value) {
+        setState(() {
+          _selectedCategory = value;
+        });
+      },
+      itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+        PopupMenuItem<String>(
+          value: 'all',
+          child: SizedBox(
+            width: 180.0, // Increased width
+            child: ListTile(
+              leading: Icon(_getCategoryIcon('all')),
+              title: const Text('All'),
+              trailing: _selectedCategory == 'all' ? const Icon(Icons.check) : Text(provider.notifications.length.toString()),
+            ),
           ),
-        ],
-      ),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Row(
-          children: [
-            CategoryChip(
-              label: 'All',
-              count: provider.notifications.length,
-              isSelected: _selectedCategory == 'all',
-              color: AppColors.primary,
-              onTap: () => setState(() => _selectedCategory = 'all'),
-            ),
-            const SizedBox(width: 10),
-            CategoryChip(
-              label: 'OTP',
-              count: provider.getCountByCategory('otp'),
-              isSelected: _selectedCategory == 'otp',
-              color: AppColors.otpCategory,
-              onTap: () => setState(() => _selectedCategory = 'otp'),
-            ),
-            const SizedBox(width: 10),
-            CategoryChip(
-              label: 'Banking',
-              count: provider.getCountByCategory('bank'),
-              isSelected: _selectedCategory == 'bank',
-              color: AppColors.bankCategory,
-              onTap: () => setState(() => _selectedCategory = 'bank'),
-            ),
-            const SizedBox(width: 10),
-            CategoryChip(
-              label: 'Security',
-              count: provider.getCountByCategory('security'),
-              isSelected: _selectedCategory == 'security',
-              color: AppColors.securityCategory,
-              onTap: () => setState(() => _selectedCategory = 'security'),
-            ),
-          ],
         ),
+        PopupMenuItem<String>(
+          value: 'emergency',
+          child: SizedBox(
+            width: 180.0, // Increased width
+            child: ListTile(
+              leading: Icon(_getCategoryIcon('emergency')),
+              title: const Text('Emergency'),
+              trailing: _selectedCategory == 'emergency' ? const Icon(Icons.check) : Text(provider.getCountByCategory('emergency').toString()),
+            ),
+          ),
+        ),
+        PopupMenuItem<String>(
+          value: 'otp',
+          child: SizedBox(
+            width: 180.0, // Increased width
+            child: ListTile(
+              leading: Icon(_getCategoryIcon('otp')),
+              title: const Text('OTP'),
+              trailing: _selectedCategory == 'otp' ? const Icon(Icons.check) : Text(provider.getCountByCategory('otp').toString()),
+            ),
+          ),
+        ),
+        PopupMenuItem<String>(
+          value: 'bank',
+          child: SizedBox(
+            width: 180.0, // Increased width
+            child: ListTile(
+              leading: Icon(_getCategoryIcon('bank')),
+              title: const Text('Banking'),
+              trailing: _selectedCategory == 'bank' ? const Icon(Icons.check) : Text(provider.getCountByCategory('bank').toString()),
+            ),
+          ),
+        ),
+        PopupMenuItem<String>(
+          value: 'security',
+          child: SizedBox(
+            width: 180.0, // Increased width
+            child: ListTile(
+              leading: Icon(_getCategoryIcon('security')),
+              title: const Text('Security'),
+              trailing: _selectedCategory == 'security' ? const Icon(Icons.check) : Text(provider.getCountByCategory('security').toString()),
+            ),
+          ),
+        ),
+      ],
+      child: const Padding(
+        padding: EdgeInsets.symmetric(horizontal: 16.0),
+        child: Icon(Icons.filter_list),
       ),
     );
+  }
+
+  IconData _getCategoryIcon(String category) {
+    switch (category) {
+      case 'emergency':
+        return Icons.emergency_outlined;
+      case 'otp':
+        return Icons.pin_outlined;
+      case 'bank':
+        return Icons.account_balance_outlined;
+      case 'security':
+        return Icons.security_outlined;
+      default:
+        return Icons.all_inbox_outlined;
+    }
   }
 
   Widget _buildNotificationList(NotificationProvider provider) {
@@ -288,6 +319,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   String _getCategoryName() {
     switch (_selectedCategory) {
+      case 'emergency':
+        return 'Emergency';
       case 'otp':
         return 'OTP';
       case 'bank':
@@ -295,19 +328,35 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       case 'security':
         return 'security';
       default:
-        return '';
+        return 'All';
     }
   }
 
   void _openDetail(
       SavedNotification notification, NotificationProvider provider) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => NotificationDetailScreen(
-          notification: notification,
-          onMarkAsRead: () => provider.deleteNotification(notification),
-        ),
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => DraggableScrollableSheet(
+        initialChildSize: 0.8,
+        minChildSize: 0.5,
+        maxChildSize: 0.9,
+        builder: (BuildContext context, ScrollController scrollController) {
+          return Container(
+            decoration: const BoxDecoration(
+              color: AppColors.background,
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(25),
+                topRight: Radius.circular(25),
+              ),
+            ),
+            child: NotificationDetailScreen(
+              notification: notification,
+              onMarkAsRead: () => provider.deleteNotification(notification),
+            ),
+          );
+        },
       ),
     );
   }
