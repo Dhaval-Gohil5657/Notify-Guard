@@ -41,6 +41,13 @@ class SettingsScreen extends StatelessWidget {
                 ),
                 onTap: () => provider.openNotificationSettings(),
               ),
+              const SizedBox(height: 8),
+              _buildSettingCard(
+                icon: Icons.autorenew_outlined,
+                title: 'Background Autostart',
+                subtitle: 'Required to capture notifications when app is closed',
+                onTap: () => _showAutostartGuide(context),
+              ),
               const SizedBox(height: 20),
 
               // Data Management Section
@@ -217,6 +224,67 @@ class SettingsScreen extends StatelessWidget {
               );
             },
             child: const Text('Delete All'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showAutostartGuide(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text(
+          'Enable Background Autostart',
+          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 20),
+        ),
+        content: const Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'To capture notifications even when the app is closed, enable Autostart for NotifyGuard.',
+              style: TextStyle(
+                fontWeight: FontWeight.w500,
+                color: AppColors.textSecondary,
+              ),
+            ),
+            SizedBox(height: 16),
+            Text(
+              'Steps:',
+              style: TextStyle(
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            SizedBox(height: 8),
+            Text(
+              '1. Open device Settings\n'
+              '2. Go to Apps > NotifyGuard\n'
+              '3. Look for "Autostart" or "Background autostart"\n'
+              '4. Enable it',
+              style: TextStyle(
+                fontWeight: FontWeight.w500,
+                color: AppColors.textSecondary,
+                height: 1.6,
+              ),
+            ),
+            SizedBox(height: 12),
+            Text(
+              'Note: The setting name and location may vary depending on your device manufacturer.',
+              style: TextStyle(
+                fontSize: 12,
+                fontStyle: FontStyle.italic,
+                color: AppColors.textLight,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Got it'),
           ),
         ],
       ),

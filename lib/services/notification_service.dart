@@ -85,6 +85,30 @@ class NotificationService {
     );
   }
 
+  Future<void> processMissedNotifications() async {
+    try {
+      final List<dynamic>? missed =
+          await _channel.invokeMethod('getMissedNotifications');
+      if (missed == null || missed.isEmpty) return;
+
+      for (final event in missed) {
+        if (event is Map) {
+          final packageName = event['packageName'] ?? '';
+          final appName = await getAppName(packageName);
+          final notification = SavedNotification.fromMap(event, appName);
+
+          final isDuplicate = await _databaseService.isDuplicate(notification);
+          if (!isDuplicate) {
+            await _databaseService.saveNotification(notification);
+            _notificationController.add(notification);
+          }
+        }
+      }
+    } on PlatformException catch (e) {
+      print('Failed to get missed notifications: ${e.message}');
+    }
+  }
+
   void stopListening() {
     _subscription?.cancel();
     _subscription = null;

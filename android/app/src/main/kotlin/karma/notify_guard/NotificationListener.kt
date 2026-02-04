@@ -1,9 +1,12 @@
 package karma.notify_guard
 
 import android.app.Notification
+import android.content.Context
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import android.util.Log
+import org.json.JSONArray
+import org.json.JSONObject
 import java.util.*
 
 class NotificationListener : NotificationListenerService() {
@@ -34,7 +37,7 @@ class NotificationListener : NotificationListenerService() {
         private val BANK_KEYWORDS = listOf(
             "bank","banking", "credit", "debit", "transaction", "payment", "upi",
             "credited", "debited", "account", "balance", "transfer",
-            "withdrawn","withdraw", "deposit", "atm"
+            "withdrawn","withdraw", "deposit", "atm","rs."
         )
 
         private val EMERGENCY_KEYWORDS = listOf(
@@ -50,6 +53,32 @@ class NotificationListener : NotificationListenerService() {
             "com.android.systemui",
             "android",
         )
+
+        private const val PREFS_NAME = "notify_guard_pending"
+        private const val KEY_PENDING = "pending_notifications"
+
+        fun getPendingNotifications(context: Context): List<Map<String, String>> {
+            val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            val json = prefs.getString(KEY_PENDING, null) ?: return emptyList()
+            val result = mutableListOf<Map<String, String>>()
+            try {
+                val array = JSONArray(json)
+                for (i in 0 until array.length()) {
+                    val obj = array.getJSONObject(i)
+                    val map = mutableMapOf<String, String>()
+                    obj.keys().forEach { key -> map[key] = obj.getString(key) }
+                    result.add(map)
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error reading pending notifications: ${e.message}")
+            }
+            return result
+        }
+
+        fun clearPendingNotifications(context: Context) {
+            context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+                .edit().remove(KEY_PENDING).apply()
+        }
     }
 
     override fun onCreate() {
@@ -157,7 +186,8 @@ class NotificationListener : NotificationListenerService() {
                         notificationCallback?.invoke(notificationData)
                         Log.d(TAG, "✅ Sent successfully!")
                     } else {
-                        Log.w(TAG, "⚠️ No callback registered - Flutter not listening")
+                        Log.w(TAG, "⚠️ No callback - storing for later delivery")
+                        savePendingNotification(notificationData)
                     }
                 } else {
                     Log.d(TAG, "ℹ️ Notification skipped - not critical and debug mode is off")
@@ -171,6 +201,56 @@ class NotificationListener : NotificationListenerService() {
 
     override fun onNotificationRemoved(sbn: StatusBarNotification?) {
         Log.d(TAG, "Notification removed: ${sbn?.packageName}")
+    }
+
+    fun getActiveNotificationData(): List<Map<String, String>> {
+        val result = mutableListOf<Map<String, String>>()
+        try {
+            val active = activeNotifications ?: return result
+            for (notification in active) {
+                if (BLOCKED_PACKAGES.contains(notification.packageName)) continue
+
+                val extras = notification.notification.extras
+                val title = extras.getCharSequence(Notification.EXTRA_TITLE)?.toString() ?: ""
+                val text = extras.getCharSequence(Notification.EXTRA_TEXT)?.toString() ?: ""
+                val bigText = extras.getCharSequence(Notification.EXTRA_BIG_TEXT)?.toString() ?: text
+                val subText = extras.getCharSequence(Notification.EXTRA_SUB_TEXT)?.toString() ?: ""
+
+                val content = "$title $text $bigText $subText".lowercase(Locale.getDefault())
+                val category = categorizeNotification(content)
+
+                if (debugMode || category != "general") {
+                    val finalCategory = if (category == "general" && debugMode) "debug" else category
+                    result.add(mapOf(
+                        "id" to notification.id.toString(),
+                        "packageName" to notification.packageName,
+                        "title" to title,
+                        "text" to if (bigText.isNotEmpty()) bigText else text,
+                        "category" to finalCategory,
+                        "timestamp" to notification.postTime.toString(),
+                        "key" to notification.key
+                    ))
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error getting active notification data: ${e.message}")
+        }
+        return result
+    }
+
+    private fun savePendingNotification(data: Map<String, String>) {
+        try {
+            val prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            val existing = prefs.getString(KEY_PENDING, null)
+            val array = if (existing != null) JSONArray(existing) else JSONArray()
+            val obj = JSONObject()
+            data.forEach { (k, v) -> obj.put(k, v) }
+            array.put(obj)
+            prefs.edit().putString(KEY_PENDING, array.toString()).apply()
+            Log.d(TAG, "💾 Stored pending notification (total: ${array.length()})")
+        } catch (e: Exception) {
+            Log.e(TAG, "Error saving pending notification: ${e.message}")
+        }
     }
 
     private fun containsWord(content: String, keyword: String): Boolean {

@@ -27,6 +27,10 @@ class NotificationProvider extends ChangeNotifier {
     _hasNotificationAccess = await _notificationService.isNotificationAccessGranted();
 
     if (_hasNotificationAccess) {
+      // Pick up any notifications that arrived while the app was killed
+      await _notificationService.processMissedNotifications();
+      _loadNotifications();
+
       _startListening();
     }
 

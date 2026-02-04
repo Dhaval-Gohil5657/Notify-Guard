@@ -2,6 +2,7 @@ package karma.notify_guard
 
 import android.content.ComponentName
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -40,6 +41,26 @@ class MainActivity : FlutterActivity() {
                         result.error("INVALID_ARGUMENT", "Package name is required", null)
                     }
                 }
+                "openAppSettings" -> {
+                    val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                    intent.data = Uri.parse("package:$packageName")
+                    startActivity(intent)
+                    result.success(true)
+                }
+                "getMissedNotifications" -> {
+                    val missed = mutableListOf<Map<String, String>>()
+
+                    // 1. Get pending notifications stored while app was killed
+                    missed.addAll(NotificationListener.getPendingNotifications(this@MainActivity))
+                    NotificationListener.clearPendingNotifications(this@MainActivity)
+
+                    // 2. Get currently active notifications from the shade
+                    NotificationListener.instance?.let { listener ->
+                        missed.addAll(listener.getActiveNotificationData())
+                    }
+
+                    result.success(missed)
+                }
                 else -> {
                     result.notImplemented()
                 }
@@ -68,6 +89,21 @@ class MainActivity : FlutterActivity() {
             mainHandler.post {
                 eventSink?.success(notificationData)
             }
+        }
+
+        // Deliver any notifications that arrived while the app was killed
+        deliverPendingNotifications()
+    }
+
+    private fun deliverPendingNotifications() {
+        val pending = NotificationListener.getPendingNotifications(this)
+        if (pending.isNotEmpty()) {
+            for (notification in pending) {
+                mainHandler.post {
+                    eventSink?.success(notification)
+                }
+            }
+            NotificationListener.clearPendingNotifications(this)
         }
     }
 

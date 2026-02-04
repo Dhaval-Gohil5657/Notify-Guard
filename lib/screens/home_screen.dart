@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:notify_guard/widgets/Loader.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../config/app_theme.dart';
 import '../providers/notification_provider.dart';
 import '../models/saved_notification.dart';
@@ -37,7 +39,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      context.read<NotificationProvider>().checkNotificationAccess();
+      _checkPermissions();
     }
   }
 
@@ -46,7 +48,43 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     final hasAccess = await provider.checkNotificationAccess();
     if (!hasAccess && mounted) {
       _showPermissionDialog();
+    } else if (mounted) {
+      _showAutostartDialogIfNeeded();
     }
+  }
+
+  Future<void> _showAutostartDialogIfNeeded() async {
+    final prefs = await SharedPreferences.getInstance();
+    final dismissed = prefs.getBool('autostart_dialog_dismissed') ?? false;
+    if (dismissed || !mounted) return;
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Enable Background Autostart'),
+        content: const Text(
+          'To capture notifications even when the app is closed, please enable "Autostart" or "Background autostart" for NotifyGuard in your device settings.\n\n'
+          'Go to Settings > Apps > NotifyGuard > Autostart and enable it.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () async {
+              await prefs.setBool('autostart_dialog_dismissed', true);
+              if (context.mounted) Navigator.pop(context);
+            },
+            child: const Text('Later'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              await prefs.setBool('autostart_dialog_dismissed', true);
+              if (context.mounted) Navigator.pop(context);
+            },
+            child: const Text('Got it'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _showPermissionDialog() {
