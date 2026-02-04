@@ -24,7 +24,7 @@ class SavedNotificationAdapter extends TypeAdapter<SavedNotification> {
       text: fields[4] as String,
       category: fields[5] as String,
       timestamp: fields[6] as DateTime,
-      key: fields[7] as String,
+      sbnKey: fields[7] as String,
       isRead: fields[8] as bool,
     );
   }
@@ -48,7 +48,7 @@ class SavedNotificationAdapter extends TypeAdapter<SavedNotification> {
       ..writeByte(6)
       ..write(obj.timestamp)
       ..writeByte(7)
-      ..write(obj.key)
+      ..write(obj.sbnKey)
       ..writeByte(8)
       ..write(obj.isRead);
   }

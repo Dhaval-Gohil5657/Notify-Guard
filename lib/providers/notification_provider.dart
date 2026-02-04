@@ -105,9 +105,11 @@ class NotificationProvider extends ChangeNotifier {
   }
 
   Future<void> deleteNotification(SavedNotification notification) async {
-    _notifications.remove(notification);
+    _notifications.removeWhere((n) => n.key == notification.key);
     notifyListeners();
-    await _databaseService.deleteNotification(notification);
+    if (notification.isInBox) {
+      await _databaseService.deleteNotification(notification);
+    }
   }
 
   Future<void> deleteAllNotifications() async {

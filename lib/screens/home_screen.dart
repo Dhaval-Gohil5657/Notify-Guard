@@ -166,72 +166,107 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     );
   }
 
+  Color _getCategoryColor(String category) {
+    switch (category) {
+      case 'emergency':
+        return AppColors.emergencyCategory;
+      case 'otp':
+        return AppColors.otpCategory;
+      case 'bank':
+        return AppColors.bankCategory;
+      case 'security':
+        return AppColors.securityCategory;
+      default:
+        return AppColors.primary;
+    }
+  }
+
+  int _getCategoryCount(String category, NotificationProvider provider) {
+    return category == 'all'
+        ? provider.notifications.length
+        : provider.getCountByCategory(category);
+  }
+
+  PopupMenuItem<String> _buildFilterItem(String value, String label, NotificationProvider provider) {
+    final isSelected = _selectedCategory == value;
+    final color = _getCategoryColor(value);
+    final count = _getCategoryCount(value, provider);
+
+    return PopupMenuItem<String>(
+      value: value,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: (isSelected ? color : color.withValues(alpha: 0.1)),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(
+                _getCategoryIcon(value),
+                color: isSelected ? Colors.white : color,
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                  color: isSelected ? color : AppColors.textPrimary,
+                ),
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                count.toString(),
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: color,
+                ),
+              ),
+            ),
+            if (isSelected) ...[
+              const SizedBox(width: 8),
+              Icon(Icons.check_circle, color: color, size: 20),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildCategoryFilter(NotificationProvider provider) {
     return PopupMenuButton<String>(
+      surfaceTintColor: Colors.transparent,
+      shadowColor: Colors.transparent,
       onSelected: (String value) {
         setState(() {
           _selectedCategory = value;
         });
       },
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      offset: const Offset(0, 48),
       itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-        PopupMenuItem<String>(
-          value: 'all',
-          child: SizedBox(
-            width: 180.0, // Increased width
-            child: ListTile(
-              leading: Icon(_getCategoryIcon('all')),
-              title: const Text('All'),
-              trailing: _selectedCategory == 'all' ? const Icon(Icons.check) : Text(provider.notifications.length.toString()),
-            ),
-          ),
-        ),
-        PopupMenuItem<String>(
-          value: 'emergency',
-          child: SizedBox(
-            width: 180.0, // Increased width
-            child: ListTile(
-              leading: Icon(_getCategoryIcon('emergency')),
-              title: const Text('Emergency'),
-              trailing: _selectedCategory == 'emergency' ? const Icon(Icons.check) : Text(provider.getCountByCategory('emergency').toString()),
-            ),
-          ),
-        ),
-        PopupMenuItem<String>(
-          value: 'otp',
-          child: SizedBox(
-            width: 180.0, // Increased width
-            child: ListTile(
-              leading: Icon(_getCategoryIcon('otp')),
-              title: const Text('OTP'),
-              trailing: _selectedCategory == 'otp' ? const Icon(Icons.check) : Text(provider.getCountByCategory('otp').toString()),
-            ),
-          ),
-        ),
-        PopupMenuItem<String>(
-          value: 'bank',
-          child: SizedBox(
-            width: 180.0, // Increased width
-            child: ListTile(
-              leading: Icon(_getCategoryIcon('bank')),
-              title: const Text('Banking'),
-              trailing: _selectedCategory == 'bank' ? const Icon(Icons.check) : Text(provider.getCountByCategory('bank').toString()),
-            ),
-          ),
-        ),
-        PopupMenuItem<String>(
-          value: 'security',
-          child: SizedBox(
-            width: 180.0, // Increased width
-            child: ListTile(
-              leading: Icon(_getCategoryIcon('security')),
-              title: const Text('Security'),
-              trailing: _selectedCategory == 'security' ? const Icon(Icons.check) : Text(provider.getCountByCategory('security').toString()),
-            ),
-          ),
-        ),
+        _buildFilterItem('all', 'All', provider),
+        _buildFilterItem('emergency', 'Emergency', provider),
+        _buildFilterItem('otp', 'OTP', provider),
+        _buildFilterItem('bank', 'Banking', provider),
+        _buildFilterItem('security', 'Security', provider),
       ],
       child: const Padding(
-        padding: EdgeInsets.symmetric(horizontal: 16.0),
+        padding: EdgeInsets.only(right: 15,left: 5),
         child: Icon(Icons.filter_list),
       ),
     );

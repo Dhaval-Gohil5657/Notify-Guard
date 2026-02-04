@@ -32,9 +32,9 @@ class NotificationListener : NotificationListenerService() {
         )
 
         private val BANK_KEYWORDS = listOf(
-            "bank", "credit", "debit", "transaction", "payment", "upi",
+            "bank","banking", "credit", "debit", "transaction", "payment", "upi",
             "credited", "debited", "account", "balance", "transfer",
-            "withdrawn", "deposit", "atm", "neft", "imps", "rtgs", "inr", "rs"
+            "withdrawn","withdraw", "deposit", "atm", "neft", "imps", "rtgs", "inr", "rs"
         )
 
         private val EMERGENCY_KEYWORDS = listOf(
@@ -175,13 +175,20 @@ class NotificationListener : NotificationListenerService() {
         Log.d(TAG, "Notification removed: ${sbn?.packageName}")
     }
 
+    private fun containsWord(content: String, keyword: String): Boolean {
+        return Regex("\\b${Regex.escape(keyword)}\\b").containsMatchIn(content)
+    }
+
     private fun categorizeNotification(content: String): String {
-        return when {
-            EMERGENCY_KEYWORDS.any { content.contains(it) } -> "emergency"
-            OTP_KEYWORDS.any { content.contains(it) } -> "otp"
-            BANK_KEYWORDS.any { content.contains(it) } -> "bank"
-            SECURITY_KEYWORDS.any { content.contains(it) } -> "security"
-            else -> "general"
-        }
+        // Count keyword matches per category using whole-word matching
+        val scores = mapOf(
+            "otp" to OTP_KEYWORDS.count { containsWord(content, it) },
+            "bank" to BANK_KEYWORDS.count { containsWord(content, it) },
+            "emergency" to EMERGENCY_KEYWORDS.count { containsWord(content, it) },
+            "security" to SECURITY_KEYWORDS.count { containsWord(content, it) }
+        )
+
+        val best = scores.maxByOrNull { it.value }
+        return if (best != null && best.value > 0) best.key else "general"
     }
 }

@@ -23,6 +23,8 @@ class NotificationCard extends StatelessWidget {
         return AppColors.bankCategory;
       case 'security':
         return AppColors.securityCategory;
+        case 'emergency':
+        return AppColors.emergencyCategory;
       default:
         return AppColors.primary;
     }
@@ -44,7 +46,7 @@ class NotificationCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Dismissible(
-      key: Key(notification.key),
+      key: ValueKey(notification.key),
       direction: DismissDirection.startToEnd,
       onDismissed: (_) => onMarkAsRead(),
       background: Container(

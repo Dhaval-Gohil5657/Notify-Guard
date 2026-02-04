@@ -26,7 +26,7 @@ class SavedNotification extends HiveObject {
   final DateTime timestamp;
 
   @HiveField(7)
-  final String key;
+  final String sbnKey;
 
   @HiveField(8)
   bool isRead;
@@ -39,7 +39,7 @@ class SavedNotification extends HiveObject {
     required this.text,
     required this.category,
     required this.timestamp,
-    required this.key,
+    required this.sbnKey,
     this.isRead = false,
   });
 
@@ -54,7 +54,7 @@ class SavedNotification extends HiveObject {
       timestamp: DateTime.fromMillisecondsSinceEpoch(
         int.tryParse(map['timestamp'] ?? '0') ?? 0,
       ),
-      key: map['key'] ?? '',
+      sbnKey: map['key'] ?? '',
     );
   }
 
@@ -66,10 +66,20 @@ class SavedNotification extends HiveObject {
         return 'Banking';
       case 'security':
         return 'Security Alert';
-      case 'debug':
-        return 'Debug / Test';
+      case 'emergency':
+        return 'emergency';
       default:
         return 'General';
     }
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is SavedNotification &&
+          runtimeType == other.runtimeType &&
+          key == other.key;
+
+  @override
+  int get hashCode => key.hashCode;
 }
