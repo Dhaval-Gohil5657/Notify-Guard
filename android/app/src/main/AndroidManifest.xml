@@ -28,10 +28,10 @@
             </intent-filter>
         </activity>
 
-        <!-- Notification Listener Service (via notification_listener_service package) -->
+        <!-- Custom service extending package's listener + SharedPreferences storage -->
         <service
             android:label="NotifyGuard Listener"
-            android:name="notification.listener.service.NotificationListener"
+            android:name=".NotifyGuardListener"
             android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE"
             android:exported="true">
             <intent-filter>

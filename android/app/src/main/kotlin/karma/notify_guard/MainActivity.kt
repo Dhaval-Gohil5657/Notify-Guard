@@ -30,6 +30,11 @@ class MainActivity : FlutterActivity() {
                         result.error("INVALID_ARGUMENT", "Package name is required", null)
                     }
                 }
+                "getMissedNotifications" -> {
+                    val missed = NotifyGuardListener.getPendingNotifications(this@MainActivity)
+                    NotifyGuardListener.clearPendingNotifications(this@MainActivity)
+                    result.success(missed)
+                }
                 "openAppSettings" -> {
                     val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
                     intent.data = Uri.parse("package:$packageName")

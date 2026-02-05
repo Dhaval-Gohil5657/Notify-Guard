@@ -139,53 +139,29 @@ class NotificationService {
     );
   }
 
-  /// Fetch active notifications from the notification shade
-  /// (replaces the old getMissedNotifications via method channel)
-  Future<void> processActiveNotifications() async {
+  /// Fetch missed notifications from SharedPreferences (stored by native service
+  /// when app was killed) and categorized with bigText on Kotlin side.
+  Future<void> processMissedNotifications() async {
     try {
-      final activeNotifications =
-          await NotificationListenerService.getActiveNotifications();
+      final List<dynamic>? missed =
+          await _channel.invokeMethod('getMissedNotifications');
+      if (missed == null || missed.isEmpty) return;
 
-      for (final event in activeNotifications) {
-        final packageName = event.packageName ?? '';
+      for (final event in missed) {
+        if (event is Map) {
+          final packageName = event['packageName'] ?? '';
+          final appName = await getAppName(packageName);
+          final notification = SavedNotification.fromMap(event, appName);
 
-        if (NotificationCategorizer.blockedPackages.contains(packageName)) {
-          continue;
-        }
-
-        final title = event.title ?? '';
-        final text = event.content ?? '';
-        final id = event.id?.toString() ?? '';
-
-        if (title.isEmpty && text.isEmpty) continue;
-
-        final sbnKey = '$packageName:$id';
-        final category = NotificationCategorizer.categorize(title, text);
-
-        // Skip general/non-critical notifications
-        if (category == 'general') continue;
-
-        final appName = await getAppName(packageName);
-
-        final notification = SavedNotification(
-          id: id,
-          packageName: packageName,
-          appName: appName,
-          title: title,
-          text: text,
-          category: category,
-          timestamp: DateTime.now(),
-          sbnKey: sbnKey,
-        );
-
-        final isDuplicate = await _databaseService.isDuplicate(notification);
-        if (!isDuplicate) {
-          await _databaseService.saveNotification(notification);
-          _notificationController.add(notification);
+          final isDuplicate = await _databaseService.isDuplicate(notification);
+          if (!isDuplicate) {
+            await _databaseService.saveNotification(notification);
+            _notificationController.add(notification);
+          }
         }
       }
-    } catch (e) {
-      print('Failed to get active notifications: $e');
+    } on PlatformException catch (e) {
+      print('Failed to get missed notifications: ${e.message}');
     }
   }
 
