@@ -20,6 +20,48 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   String _selectedCategory = 'all';
+  bool _isSelectionMode = false;
+  final Set<dynamic> _selectedKeys = {};
+
+  void _enterSelectionMode(SavedNotification notification) {
+    setState(() {
+      _isSelectionMode = true;
+      _selectedKeys.add(notification.key);
+    });
+  }
+
+  void _toggleSelection(SavedNotification notification) {
+    setState(() {
+      if (_selectedKeys.contains(notification.key)) {
+        _selectedKeys.remove(notification.key);
+        if (_selectedKeys.isEmpty) {
+          _isSelectionMode = false;
+        }
+      } else {
+        _selectedKeys.add(notification.key);
+      }
+    });
+  }
+
+  void _selectAll(List<SavedNotification> notifications) {
+    setState(() {
+      _selectedKeys.addAll(notifications.map((n) => n.key));
+    });
+  }
+
+  void _clearSelection() {
+    setState(() {
+      _isSelectionMode = false;
+      _selectedKeys.clear();
+    });
+  }
+
+  List<SavedNotification> _getSelectedNotifications(NotificationProvider provider) {
+    final notifications = _selectedCategory == 'all'
+        ? provider.notifications
+        : provider.getByCategory(_selectedCategory);
+    return notifications.where((n) => _selectedKeys.contains(n.key)).toList();
+  }
 
   @override
   void initState() {
@@ -116,40 +158,50 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        centerTitle: false,
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(10),
-              child: Image.asset(
-                'assets/notify_guard.png',
-                width: 32,
-                height: 32,
+    final provider = context.watch<NotificationProvider>();
+    return PopScope(
+      canPop: !_isSelectionMode,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop && _isSelectionMode) {
+          _clearSelection();
+        }
+      },
+      child: Scaffold(
+      appBar: _isSelectionMode
+          ? _buildSelectionAppBar(provider)
+          : AppBar(
+              centerTitle: false,
+              title: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: Image.asset(
+                      'assets/notify_guard.png',
+                      width: 32,
+                      height: 32,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  const Text(
+                    'Notify Guard',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ],
               ),
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.settings_outlined),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const SettingsScreen()),
+                    );
+                  },
+                ),
+                _buildCategoryFilter(provider),
+              ],
             ),
-            const SizedBox(width: 12),
-            const Text(
-              'Notify Guard',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-          ],
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings_outlined),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const SettingsScreen()),
-              );
-            },
-          ),
-          _buildCategoryFilter(context.watch<NotificationProvider>()),
-        ],
-      ),
       body: Consumer<NotificationProvider>(
         builder: (context, provider, _) {
           if (!provider.isInitialized) {
@@ -166,6 +218,82 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             ],
           );
         },
+      ),
+      ),
+    );
+  }
+
+  PreferredSizeWidget _buildSelectionAppBar(NotificationProvider provider) {
+    final notifications = _selectedCategory == 'all'
+        ? provider.notifications
+        : provider.getByCategory(_selectedCategory);
+    final allSelected = notifications.isNotEmpty &&
+        notifications.every((n) => _selectedKeys.contains(n.key));
+
+    return AppBar(
+      leading: IconButton(
+        icon: const Icon(Icons.close),
+        onPressed: _clearSelection,
+      ),
+      title: Text(
+        '${_selectedKeys.length} selected',
+        style: const TextStyle(fontWeight: FontWeight.bold),
+      ),
+      actions: [
+        IconButton(
+          icon: Icon(allSelected
+              ? Icons.deselect
+              : Icons.select_all),
+          tooltip: allSelected ? 'Deselect all' : 'Select all',
+          onPressed: () {
+            if (allSelected) {
+              _clearSelection();
+            } else {
+              _selectAll(notifications);
+            }
+          },
+        ),
+        IconButton(
+          icon: const Icon(Icons.delete_outline),
+          tooltip: 'Delete selected',
+          onPressed: _selectedKeys.isEmpty
+              ? null
+              : () => _confirmDeleteSelected(provider),
+        ),
+      ],
+    );
+  }
+
+  void _confirmDeleteSelected(NotificationProvider provider) {
+    final selected = _getSelectedNotifications(provider);
+    if (selected.isEmpty) return;
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Delete Notifications'),
+        content: Text(
+          'Are you sure you want to delete ${selected.length} notification${selected.length > 1 ? 's' : ''}?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.emergencyCategory,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () {
+              Navigator.pop(context);
+              provider.deleteMultipleNotifications(selected);
+              _clearSelection();
+            },
+            child: const Text('Delete'),
+          ),
+        ],
       ),
     );
   }
@@ -386,6 +514,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             notification: notification,
             onTap: () => _openDetail(notification, provider),
             onMarkAsRead: () => provider.deleteNotification(notification),
+            isSelectionMode: _isSelectionMode,
+            isSelected: _selectedKeys.contains(notification.key),
+            onLongPress: () => _enterSelectionMode(notification),
+            onSelect: () => _toggleSelection(notification),
           );
         },
       ),

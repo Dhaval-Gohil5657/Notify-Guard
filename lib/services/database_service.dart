@@ -36,6 +36,14 @@ class DatabaseService {
     await notification.delete();
   }
 
+  Future<void> deleteMultipleNotifications(List<SavedNotification> notifications) async {
+    for (var notification in notifications) {
+      if (notification.isInBox) {
+        await notification.delete();
+      }
+    }
+  }
+
   Future<void> deleteAllNotifications() async {
     await _box.clear();
   }
